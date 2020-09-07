@@ -2,7 +2,8 @@
 	Civilian Presence Module, spawna det man vill.
 	Om du vill spawna trovärdiga civs så behöver man ibland styra vad modulen väljer.
 	
-	Lägg in koden i modulens init.
+	Usage 1: Lägg in koden i modulens init och ändra classes, faces godtyckligt.
+	Usage 2: Ändra direkt i filen och kör [] execVM "ace_utils\ASE_CivilianPresence.sqf" i init-fältet.
 	
 	@author Beck [ASE] - Discord Beck#1679
 */
