@@ -91,10 +91,7 @@ ASE_ReportEnemy_Interval = 120; // if enemy is reported, wait this long before w
 								sleep ASE_ReportEnemy_Timeout;
 								
 								// If the all units in the patrol group is dead or unconscious, we can't report in
-								if ({ alive _x } count units _patrolGroup < 1) exitWith {};													
-								
-								_msg = format ["Enemy '%1' spotted at grid %2 (marked on map)", groupId _enemyGroup, mapGridPosition _enemyLocation];
-								//systemChat _msg;
+								if ({ alive _x } count units _patrolGroup < 1) exitWith {};																													
 								
 								// First delete old marker, if any
 								_oldMarker = _enemyGroup getVariable ["ASE_ReportEnemyMarker", ""];
@@ -116,12 +113,12 @@ ASE_ReportEnemy_Interval = 120; // if enemy is reported, wait this long before w
 								_bfMarkerName setMarkerText groupId _patrolGroup;
 								
 								_enemyGroup setVariable ["ASE_ReportEnemyMarker", _markerName];
-								_enemyGroup setVariable ["ASE_ReportEnemyTimer", time + ASE_ReportEnemy_Interval];
-								
-								systemChat format ["Added marker: %1", _markerName];
+								_enemyGroup setVariable ["ASE_ReportEnemyTimer", time + ASE_ReportEnemy_Interval];								
 								
 								// Report in on sideChat
+								_msg = format ["Enemy '%1' spotted at grid %2 (marked on map)", groupId _enemyGroup, mapGridPosition _enemyLocation];								
 								[leader _patrolGroup, _msg] remoteExec ["sideChat"];
+								//systemChat _msg;
 								
 							}; // end spawn
 						}; // end if exitWith
