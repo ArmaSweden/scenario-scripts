@@ -1,6 +1,12 @@
 /**
-* All units (intended for AI) with variable ASE_ReportEnemy set to true, will report over side radio if they encounter i.e. "knowsAbout" an enemy unit.
-*
+  Groups (intended for AI) with variable ASE_ReportEnemy set to true, will report over side radio if they encounter i.e. "knowsAbout" an enemy unit.
+  Enemy have to be in "line-of-sight" to be reported.
+  
+  Usage: 
+  
+  Put the following line in the init section of a unit:
+  
+  (group this) setVariable ["ASE_ReportEnemy", true] 
 */
 
 if (!isServer) exitWith {};
