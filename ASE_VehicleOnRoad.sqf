@@ -15,7 +15,7 @@ if (!isServer) exitWith {};
 		
 		{
 			_affectedGroup = _x;	
-			// If the all units in the group is dead, move to the next one
+			// If all units in the group is dead, move to the next one
 			if ({ alive _x } count units _affectedGroup < 1) exitWith {};			
 			
 			{								
