@@ -16,7 +16,8 @@ if (!isServer) exitWith {};
 // Once an enemy is detected, the reporting group will wait for the given time before reporting in
 // i.e. give the enemy a chance to take this group out
 ASE_ReportEnemy_Timeout = 5; // in seconds before reporting
-ASE_ReportEnemyInterval = 120; // if reported, wait a while until we report again
+ASE_ReportEnemy_PosInterval = 60; // how often a patroling unit report their own position
+ASE_ReportEnemy_Interval = 120; // if enemy is reported, wait this long before we report again
 
 [] spawn {	
 
@@ -27,6 +28,22 @@ ASE_ReportEnemyInterval = 120; // if reported, wait a while until we report agai
 
 		{
 			_patrolGroup = _x;	
+			
+			// Report position of this patroling group			
+			_reportPositionTimer = _patrolGroup getVariable ["ASE_ReportEnemyPosTimer", 0];
+			if (time > _reportPositionTimer) then {
+				// Draw/update own marker on map								
+				_bfMarkerName = format ["%1:%2", groupId _patrolGroup];
+				deleteMarker _bfMarkerName;
+				_bfMarkerName = createMarker [_bfMarkerName, getPos leader _patrolGroup];								
+				_bfMarkerName setMarkerType "b_unknown";
+				_bfMarkerName setMarkerText groupId _patrolGroup;				
+				// Report in on sideChat
+				_msg = format ["'%1' reporting position (marked on map)", groupId _patrolGroup];
+				[leader _patrolGroup, _msg] remoteExec ["sideChat"];
+				// Update interval
+				_patrolGroup setVariable ["ASE_ReportEnemyPosTimer", time + ASE_ReportEnemy_PosInterval];
+			};						
 			
 			{
 				
@@ -91,13 +108,15 @@ ASE_ReportEnemyInterval = 120; // if reported, wait a while until we report agai
 								_min  = _now select 4;
 								_markerName setMarkerText format ["%1 (%2)", groupId _enemyGroup, format ["%1:%2", _hour, _min]];
 								
-								// Draw/update own marker on map
-								_bfMarkerName = createMarker [format ["%1:%2", groupId _patrolGroup], getPos leader _patrolGroup];
+								// Draw/update own marker on map								
+								_bfMarkerName = format ["%1:%2", groupId _patrolGroup];
+								deleteMarker _bfMarkerName;
+								_bfMarkerName = createMarker [_bfMarkerName, getPos leader _patrolGroup];								
 								_bfMarkerName setMarkerType "b_unknown";
 								_bfMarkerName setMarkerText groupId _patrolGroup;
 								
 								_enemyGroup setVariable ["ASE_ReportEnemyMarker", _markerName];
-								_enemyGroup setVariable ["ASE_ReportEnemyTimer", time + ASE_ReportEnemyInterval];
+								_enemyGroup setVariable ["ASE_ReportEnemyTimer", time + ASE_ReportEnemy_Interval];
 								
 								systemChat format ["Added marker: %1", _markerName];
 								
