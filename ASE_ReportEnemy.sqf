@@ -7,6 +7,8 @@
   Put the following line in the init section of a unit:
   
   (group this) setVariable ["ASE_ReportEnemy", true] 
+  
+  @author: Beck 
 */
 
 if (!isServer) exitWith {};
