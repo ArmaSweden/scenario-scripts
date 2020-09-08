@@ -8,7 +8,7 @@
   
   (group this) setVariable ["ASE_ReportEnemy", true] 
   
-  @author: Beck 
+  @author Beck [ASE] - Discord Beck#1679
 */
 
 if (!isServer) exitWith {};
