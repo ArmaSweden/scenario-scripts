@@ -15,9 +15,9 @@ if (!isServer) exitWith {};
 
 // Once an enemy is detected, the reporting group will wait for the given time before reporting in
 // i.e. give the enemy a chance to take this group out
-ASE_ReportEnemy_Timeout = 5; // in seconds before reporting
-ASE_ReportEnemy_PosInterval = 60; // how often a patroling unit report their own position
-ASE_ReportEnemy_Interval = 120; // if enemy is reported, wait this long before we report again
+ASE_Report_Enemy_Timeout = 15; // in seconds before reporting
+ASE_Report_Pos_Interval = [240, 300, 360]; // how often a patroling unit report their own position [min, mid, max]
+ASE_Report_Enemy_Interval = 120; // if enemy is reported, wait this long before we report again
 
 [] spawn {	
 
@@ -28,40 +28,37 @@ ASE_ReportEnemy_Interval = 120; // if enemy is reported, wait this long before w
 
 		{
 			_patrolGroup = _x;	
+			_patrolDead = false;
 			
+			// If the all units in the patrol group is dead or unconscious, we can't report in
+			if ({ alive _x } count units _patrolGroup < 1) exitWith {
+				_patrolDead = true;
+			};
+						
 			// Report position of this patroling group			
-			_reportPositionTimer = _patrolGroup getVariable ["ASE_ReportEnemyPosTimer", 0];
-			if (time > _reportPositionTimer) then {
+			_reportPositionTimer = _patrolGroup getVariable ["ASE_ReportPosTimer", 0];
+			if (!_patrolDead && time > _reportPositionTimer) then {
+				
 				// Draw/update own marker on map								
-				_bfMarkerName = format ["%1:%2", groupId _patrolGroup];
-				deleteMarker _bfMarkerName;
-				_bfMarkerName = createMarker [_bfMarkerName, getPos leader _patrolGroup];								
-				_bfMarkerName setMarkerType "b_unknown";
-				_bfMarkerName setMarkerText groupId _patrolGroup;				
+				[_patrolGroup, (getPos leader _patrolGroup), "b_unknown"] call ASE_fnc_UpdateMarker;
 				// Report in on sideChat
-				_msg = format ["'%1' reporting position (marked on map)", groupId _patrolGroup];
-				[leader _patrolGroup, _msg] remoteExec ["sideChat"];
+				[leader _patrolGroup, "Reporting position (marked on map)"] remoteExec ["sideChat"];
 				// Update interval
-				_patrolGroup setVariable ["ASE_ReportEnemyPosTimer", time + ASE_ReportEnemy_PosInterval];
+				_patrolGroup setVariable ["ASE_ReportPosTimer", time + (random ASE_Report_Pos_Interval)];
 			};						
 			
-			{
-				
+			{				
 				_enemyGroup = _x;
 				
 				// See if anyone in patrol group knowns about any unit in this enemy group
 				{					
-									
-					if (_patrolGroup knowsAbout _x >= 1.5) then {
+					_enemyUnit = _x;
 					
-						// If the all units in the patrol group is dead or unconscious, we can't report in
-						if ({ alive _x } count units _patrolGroup < 1) exitWith {systemChat "This group is dead";};
+					if (!_patrolDead && _patrolGroup knowsAbout _enemyUnit >= 1.5) then {											
 							
-						_enemyLocation = getPos _x;
-						_grid = mapGridPosition _enemyLocation;												
+						_enemyLocation = getPos _enemyUnit;
 												
-						// Check if any unit in the patrol group can see any enemy unit						
-						_enemyUnit = _x;
+						// Check if any unit in the patrol group can see the current enemy unit
 						_canSee = 0;
 						{
 							_patrolUnit = _x;							
@@ -75,53 +72,40 @@ ASE_ReportEnemy_Interval = 120; // if enemy is reported, wait this long before w
 						
 						// Exit if this enemy has been reported recently
 						_reportTimer = _enemyGroup getVariable ["ASE_ReportEnemyTimer", 0];						
-						if (time < _reportTimer) exitWith {systemChat "Recently spotted, no need to update";};																																		
+						if (time < _reportTimer) exitWith {systemChat "Enemy recently spotted, no need to update";};																																		
 						// Give any previous spawn thread a chance to start before creating a new one on the same observation
-						_enemyGroup setVariable ["ASE_ReportEnemyTimer", time + ASE_ReportEnemy_Timeout + 5];																								
+						_enemyGroup setVariable ["ASE_ReportEnemyTimer", time + ASE_Report_Enemy_Timeout + 5];																								
 						
 						// Use exitWith, it is enough that one unit in the patrol group report about the enemy
 						if (true) exitWith {
 							// Spawn new report thread
 							[_patrolGroup, _enemyGroup, _enemyLocation] spawn {
-								params ["_patrolGroup", "_enemyGroup", "_enemyLocation"];
-															
-								//systemChat format ["Spawning: %1, %2, %3", _patrolGroup, _enemyGroup, _enemyLocation];
+								params ["_patrolGroup", "_enemyGroup", "_enemyLocation"];																							
 								
 								// Give the enemy a change to take this group out before we report in
-								sleep ASE_ReportEnemy_Timeout;
+								sleep ASE_Report_Enemy_Timeout;																																																													
 								
 								// If the all units in the patrol group is dead or unconscious, we can't report in
-								if ({ alive _x } count units _patrolGroup < 1) exitWith {};																													
-								
-								// First delete old marker, if any
-								_oldMarker = _enemyGroup getVariable ["ASE_ReportEnemyMarker", ""];
-								deleteMarker _oldMarker;
+								if ({ alive _x } count units _patrolGroup < 1) exitWith {
+									// Reset report timers to allow another group to report this enemy unit
+									_enemyGroup setVariable ["ASE_ReportEnemyTimer", 0];
+								};
 								
 								// Draw/update enemy marker on map
-								_markerName = createMarker [format ["%1:%2", groupId _enemyGroup, mapGridPosition _enemyLocation], _enemyLocation];
-								_markerName setMarkerType "o_unknown";
-								_now = date; // [2014,10,30,2,30] (Oct. 30th, 2:30am)
-								_hour = _now select 3;
-								_min  = _now select 4;
-								_markerName setMarkerText format ["%1 (%2)", groupId _enemyGroup, format ["%1:%2", _hour, _min]];
-								
+								[_enemyGroup, _enemyLocation, "o_unknown"] call ASE_fnc_UpdateMarker;																
 								// Draw/update own marker on map								
-								_bfMarkerName = format ["%1:%2", groupId _patrolGroup];
-								deleteMarker _bfMarkerName;
-								_bfMarkerName = createMarker [_bfMarkerName, getPos leader _patrolGroup];								
-								_bfMarkerName setMarkerType "b_unknown";
-								_bfMarkerName setMarkerText groupId _patrolGroup;
+								[_patrolGroup, (getPos leader _patrolGroup), "b_unknown"] call ASE_fnc_UpdateMarker;								
 								
-								_enemyGroup setVariable ["ASE_ReportEnemyMarker", _markerName];
-								_enemyGroup setVariable ["ASE_ReportEnemyTimer", time + ASE_ReportEnemy_Interval];								
+								// Store this timer on the enemy group
+								_enemyGroup setVariable ["ASE_ReportEnemyTimer", time + ASE_Report_Enemy_Interval];								
 								
 								// Report in on sideChat
-								_msg = format ["Enemy '%1' spotted at grid %2 (marked on map)", groupId _enemyGroup, mapGridPosition _enemyLocation];								
+								_msg = format ["Enemy %1 spotted! At grid %2 (marked on map)", groupId _enemyGroup, mapGridPosition _enemyLocation];								
 								[leader _patrolGroup, _msg] remoteExec ["sideChat"];
 								//systemChat _msg;
 								
 							}; // end spawn
-						}; // end if exitWith
+						}; // end if exitwith
 					}; // end if
 					
 				} forEach (units _enemyGroup);
@@ -133,3 +117,26 @@ ASE_ReportEnemy_Interval = 120; // if enemy is reported, wait this long before w
 	};	
 	
 };
+
+ASE_fnc_UpdateMarker = {
+	params ["_group", "_location", "_markerType"];
+	
+	// First delete old marker, if any
+	_oldMarker = _group getVariable ["ASE_GroupMarker", ""];
+	deleteMarker _oldMarker;
+								
+	_now = date; // [2014,10,30,2,30] (Oct. 30th, 2:30am)
+	_hour = _now select 3;
+	_min  = _now select 4;
+	_hhmm = format ["%1:%2", _hour, _min];
+	
+	// Draw/update own marker on map								
+	_markerName = format ["BFM-%1", groupId _group];
+	_markerName = createMarker [_markerName, _location];								
+	_markerName setMarkerType _markerType;
+	_markerName setMarkerText format ["%1 (%2)", groupId _group, _hhmm];		
+	
+	// Store marker
+	_group setVariable ["ASE_GroupMarker", _markerName];	
+};
+
