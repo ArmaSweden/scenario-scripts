@@ -1,7 +1,8 @@
 /*
 	Creates a repair zone area for vehicles (not humans).
 	
-	Put this code in a triggers activation field:	
+	Put the line of code below in a triggers activation field:	
+	
 	[thisList] execVM "scripts\ASE_RepairZone.sqf";
 	
 	@author Beck [ASE]
