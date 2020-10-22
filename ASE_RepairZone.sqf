@@ -8,6 +8,8 @@
 	@author Beck [ASE]
 */
 
+if (!isServer) exitWith {};
+
 params ["_thisList"];
 
 {
@@ -16,9 +18,11 @@ params ["_thisList"];
 	
 	_vehicle = getText (configFile >> "CfgVehicles" >> typeOf _x >> "displayName");
 	_msg = format ["%1 is repaired, refueled and rearmed! Ready to go sir!", _vehicle];
-	[[_msg, "PLAIN"]] remoteExec ["titleText", _x];	
+	[[_msg, "PLAIN"]] remoteExec ["titleText", _x];
+	// SetDamage has global arguments and effect so we can run it on the server
 	_x setDamage 0;
-	_x setFuel 1;
-	_x setVehicleAmmo 1;
+	// SetFuel and SetVehicleAmmo has to be executed on the client where the vehicle is local (i.e. the drivers client)
+	[_x, 1] remoteExec ["setVehicleAmmo", _x]; 
+	[_x, 1] remoteExec ["setFuel", _x]; 	
 	
 } foreach _thisList;
