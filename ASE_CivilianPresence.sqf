@@ -3,10 +3,12 @@
 	Om du vill spawna trovärdiga civs så behöver man ibland styra vad modulen väljer.
 	
 	Usage 1: Lägg in koden i modulens init och ändra classes, faces godtyckligt.
-	Usage 2: Ändra direkt i filen och kör [] execVM "ace_utils\ASE_CivilianPresence.sqf" i init-fältet.
+	Usage 2: Ändra direkt i filen och kör [_this] execVM "ace_utils\ASE_CivilianPresence.sqf" i init-fältet.
 	
 	@author Beck [ASE] - Discord Beck#1679
 */
+params [["_this", _this]];
+
 _classes = ["CFP_C_AFRISLAMIC_Civ_1_01", "CFP_C_AFRISLAMIC_Civ_2_01", "CFP_C_AFRISLAMIC_Civ_3_01", "CFP_C_AFRISLAMIC_Civ_4_01", "CFP_C_AFRISLAMIC_Civ_5_01", "CFP_C_AFRISLAMIC_Civ_6_01", "CFP_C_AFRISLAMIC_Civ_7_01", "CFP_C_AFRISLAMIC_Civ_8_01", "CFP_C_AFRISLAMIC_Civ_9_01", "CFP_C_AFRISLAMIC_Civ_10_01", "CFP_C_AFRISLAMIC_Civ_11_01","CFP_C_AFRISLAMIC_Civ_12_01", "CFP_C_AFRCHRISTIAN_Civ_1_01", "CFP_C_AFRCHRISTIAN_Civ_2_01", "CFP_C_AFRCHRISTIAN_Civ_3_01", "CFP_C_AFRCHRISTIAN_Civ_4_01", "CFP_C_AFRCHRISTIAN_Civ_5_01", "CFP_C_AFRCHRISTIAN_Civ_6_01", "CFP_C_AFRCHRISTIAN_Civ_7_01", "CFP_C_AFRCHRISTIAN_Civ_8_01", "CFP_C_AFRCHRISTIAN_Civ_9_01", "CFP_C_AFRCHRISTIAN_Civ_10_01", "CFP_C_AFRCHRISTIAN_Civ_11_01", "CFP_C_AFRCHRISTIAN_Civ_12_01", "CFP_C_AFRCHRISTIAN_Civ_13_01", "CFP_C_AFRCHRISTIAN_Civ_14_01"];  
  _faces = ["AfricanHead_03_sick", "AfricanHead_01",  "AfricanHead_02",  "AfricanHead_03"]; 
 _unitClass = selectRandom _classes;  
