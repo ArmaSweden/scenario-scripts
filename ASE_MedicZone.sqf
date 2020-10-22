@@ -18,4 +18,4 @@ params ["_thisList"];
 	_msg = "Doctor: you are ready to go solider, godspeed!"; 
 	[[_msg, "PLAIN"]] remoteExec ["titleText", _x]; 
  
-} forEach thisList;
+} forEach _thisList;
