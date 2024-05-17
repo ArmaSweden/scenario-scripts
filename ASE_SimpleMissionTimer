@@ -14,11 +14,10 @@
 
 //timer.sqf
 sleep 60;
-//[parseText "<t font='PuristaBold' size='4'>3 timmar kvar</t><br />", false, nil, 10, 1, 0] spawn BIS_fnc_textTiles;
-[[parseText "<t font='PuristaBold' size='4'>3 timmar kvar</t><br />", false, nil, 10, 1, 0] remoteExec ["BIS_fnc_textTiles", 0, true];
+{ hint parseText "<t font='PuristaBold' size='4'>3 timmar kvar</t><br />", false, nil, 10, 1, 0; } remoteExec ["call", 0, true];
 
 sleep 10140;
-[[parseText "<t font='PuristaBold' size='4'>3 timmar kvar</t><br />", false, nil, 10, 1, 0] remoteExec ["BIS_fnc_textTiles", 0, true];
+{ hint parseText "<t font='PuristaBold' size='4'>10 minuter kvar</t><br />", false, nil, 10, 1, 0; } remoteExec ["call", 0, true];
 
 sleep 600;
 "end1" call BIS_fnc_endMission;
