@@ -1,0 +1,24 @@
+/*
+	Avslutar uppdraget efter precis tre timmar med en 10 minuter kvar varning.
+	Att göra: Behöver ändras till remotexec för dedikerad server och testas.
+	Lägg till nedan rad i serverInit.sqf:
+	
+  //INITIATE MISSION TIMER
+  []execVM "scripts\timer.sqf";
+
+  Resten av koden nedan i en mapp som heter scripts och filen skall heta timer.sqf
+	Justera koden med vilken "end" du vill ha.
+
+	@author DONK [ASE]
+*/
+
+//timer.sqf
+sleep 60;
+//[parseText "<t font='PuristaBold' size='4'>3 timmar kvar</t><br />", false, nil, 10, 1, 0] spawn BIS_fnc_textTiles;
+[[parseText "<t font='PuristaBold' size='4'>3 timmar kvar</t><br />", false, nil, 10, 1, 0] remoteExec ["BIS_fnc_textTiles", 0, true];
+
+sleep 10140;
+[[parseText "<t font='PuristaBold' size='4'>3 timmar kvar</t><br />", false, nil, 10, 1, 0] remoteExec ["BIS_fnc_textTiles", 0, true];
+
+sleep 600;
+"end1" call BIS_fnc_endMission;
