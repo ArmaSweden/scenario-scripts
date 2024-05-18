@@ -1,0 +1,695 @@
+/*
+Gör en AI till kvartermästare i ditt uppdrag där spelarna kan hämta ut lådor med ammunition 
+och annat användbart.
+
+Hur du lägger in det:
+Gör en valfri AI till kvartermästare genom att ange den som QM1 och sätt en markör intill där 
+utrustningen skall spawna in och ange den som tab_1
+	
+Aktivering: Lägg till nedan rader i serverInit.sqf:
+	
+  //INITIATE MISSION TIMER
+  []execVM "scripts\timer.sqf";
+
+  Resten av koden nedan kopierar du och klistrar in i två filer som du lägger i en mapp som heter scripts och filerna skall heta:
+  fn_suppliesActions.sqf
+  fn_suppliesCore.sqf
+
+	Justera koden med vad du vill ha i lådorna eller lägg till egna.
+
+	@author of optimized script: EMEK [ASE]
+  @original script and idea: DONK [ASE]
+*/
+
+
+
+
+//---------------------------------------------------------------------------------
+//fn_suppliesActions.sqf
+//_supplies = missionNamespace getVariable ["_supplies", []];
+
+private _texts = [
+	"CLEAR SPACE",
+	"Request AK4 canister. 32 x20",
+	"Request AK5 canister. 32 x30",
+	"Request KSP90 canister. 5 x200",
+	"Request KSP58 canister. 4 x249",
+	"Request SHGR2000 canister x12.",
+	"Request SMOKE canister x12.",
+	"Request 40mm canister x30. ",
+	"Request LysPtr7 canister x60. ",
+	"Request PSG90 canister. 45 x9",
+	"Request AG90 canister. 10 x10",
+	"Request 5.56 box. 65 x30, 12 x200",
+	"Request 5.56 KSP box. 25 x200",
+	"Request 7.62 KSP box. 25 x249",
+	"Request 7.62 AK4D box. 80 x20",
+	"Request Grenades. SHGR56 x50",
+	"Request Grenades. SHGR2000 x80",
+	"Request Grenades. Flashbang x125",
+	"Request Grenades. SMOKE x120",
+	"Request Grenades. 40mm HE x60, HEDP x60",
+	"Request Explosives",
+	"Request GRG. HEAT x 14",
+	"Request GRG. HE x14",
+	"Request GRG. SMOKE x14",
+	"Request GRG. ILLUM x14",
+	"Request NÄRLYS SignP80 x2, Lysptr7 x360",
+	"Request AT box. Rb57 x6",
+	"Request AT box. P86 x16",
+	"Request Vehicle ammo 1200 points",
+	"Request Ammo Pallet",
+	"Request Fuel pallet 4x100L",
+	"Request Spare Wheel",
+	"Request Spare Tank Track",
+	"Request Jerry can 20L",
+	"Request Medical Box. Std",
+	"Request Medical Box. Adv",
+	"Request Medic pack.",
+	"Request Medic adv pack.",
+	"Request Engineer pack"
+];
+
+{
+	[QM1, [_x, { 
+		params ["_target", "_caller", "_actionId", "_arguments"];
+		[_arguments] spawn compile preprocessFileLineNumbers "scripts\fn_suppliesCore.sqf";
+	
+	}, _x]] remoteExec ["addAction",0,true];
+} forEach _texts;
+
+
+
+
+  //---------------------------------------------------------------------------------
+  //fn_suppliesCore.sqf
+
+private _supplies = _this select 0;
+private "_object";
+switch (_supplies) do {
+	case "CLEAR SPACE": {
+		
+		{
+			deleteVehicle _x 
+		} forEach nearestObjects [getMarkerPos "tab_1", ["ThingX"], 2];
+		
+	};
+
+	case "Request AK4 canister. 32 x20": {
+		_object = createVehicle ["sfp_ammocrate_556", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "AK4", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_20Rnd_762x51_ak4", 30], ["sfp_20Rnd_762x51_ak4_tracer", 2]];
+		
+	};
+
+	case "Request AK5 canister. 32 x30": {
+		_object = createVehicle ["sfp_ammocrate_556", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "Rök", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["SmokeShell", 10], ["SmokeShellBlue", 2]];
+		
+	};
+
+	case "Request KSP90 canister. 5 x200": {
+		_object = createVehicle ["sfp_ammocrate_556", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "KSP90", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_200Rnd_556x45_ksp90", 4], ["sfp_200Rnd_556x45_ksp90_irtracer", 1]];
+		
+	};
+
+	case "Request KSP58 canister. 4 x249": {
+		_object = createVehicle ["sfp_ammocrate_556", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "KSP58", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_249Rnd_762x51_ksp58", 4]];
+		
+	};
+
+	case "Request SHGR2000 canister x12.": {
+		_object = createVehicle ["sfp_ammocrate_556", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "SHGR2000", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_handgrenade_shgr2000", 12]];
+		
+	};
+
+	case "Request SMOKE canister x12.": {
+		_object = createVehicle ["sfp_ammocrate_556", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "Rök", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["SmokeShell", 10], ["SmokeShellBlue", 2]];
+		
+	};
+
+	case "Request 40mm canister x30. ": {
+		_object = createVehicle ["sfp_ammocrate_556", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "40MM GGR", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["CUP_1Rnd_HE_M203", 15], ["CUP_1Rnd_HEDP_M203", 15]];
+		
+	};
+
+	case "Request LysPtr7 canister x60. ": {
+		_object = createVehicle ["sfp_ammocrate_556", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "Lys", true];
+		{
+		_object addWeaponCargoGlobal _x;
+		} forEach [["sfp_signpist50", 1]];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_1rnd_lyspatron7_mag", 80]];
+		
+	};
+
+	case "Request PSG90 canister. 45 x9": {
+		_object = createVehicle ["sfp_ammocrate_127", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "PSG90", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_9Rnd_762x51_psg90", 15], ["sfp_9Rnd_762x51_psg90_tracer", 15], ["sfp_9Rnd_762x51_psg90_prick", 15]];
+		
+	};
+
+	case "Request AG90 canister. 10 x10": {
+		_object = createVehicle ["sfp_ammocrate_127", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, true, [0,0,1], 0] call ace_dragging_fnc_setCarryable;
+		[_object, 0] call ace_rearm_fnc_setSupplyCount;
+		[_object, 0.2] call ace_cargo_fnc_setSize;
+		_object setVariable ["ace_cargo_customName", "AG90", true];
+		
+	};
+
+	case "Request 5.56 box. 65 x30, 12 x200": {
+		_object = createVehicle ["Box_NATO_Ammo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "AK5, KSP90", true];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_30Rnd_556x45_Stanag", 60], ["sfp_30Rnd_556x45_Stanag_tracer", 5], ["sfp_200Rnd_556x45_ksp90", 8], ["sfp_200Rnd_556x45_ksp90_irtracer", 4]];
+		
+	};
+
+	case "Request 5.56 KSP box. 25 x200": {
+		_object = createVehicle ["Box_NATO_Ammo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "KSP90", true];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		{
+		this addMagazineCargoGlobal _x;
+		} forEach [["sfp_200Rnd_556x45_ksp90", 15], ["sfp_200Rnd_556x45_ksp90_irtracer", 10]];
+		
+	};
+
+	case "Request 7.62 KSP box. 25 x249": {
+		_object = createVehicle ["Box_NATO_Ammo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "KSP58", true];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_249Rnd_762x51_ksp58", 25]];
+		
+	};
+
+	case "Request 7.62 AK4D box. 80 x20": {
+		_object = createVehicle ["Box_NATO_Ammo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "AK4 Skarpskytt", true];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_20Rnd_762x51_ak4", 20], ["sfp_20Rnd_762x51_ak4_ap", 20], ["sfp_20Rnd_762x51_ak4_irtracer", 20], ["sfp_20Rnd_762x51_ak4_tracer", 20]];
+		
+	};
+
+	case "Request Grenades. SHGR56 x50": {
+		_object = createVehicle ["Box_NATO_Grenades_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "SHGR56", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_handgrenade_shgr56", 50]];
+		
+	};
+
+	case "Request Grenades. SHGR2000 x80": {
+		_object = createVehicle ["Box_NATO_Grenades_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "SHGR2000", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_handgrenade_shgr2000", 80]];
+		
+	};
+
+	case "Request Grenades. Flashbang x125": {
+		_object = createVehicle ["Box_NATO_Grenades_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "Distraktionsgranater", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_FlashBang", 125]];
+		
+	};
+
+	case "Request Grenades. SMOKE x120": {
+		_object = createVehicle ["Box_NATO_Grenades_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "RÖKHGR", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["SmokeShell", 80], ["SmokeShellBlue", 30], ["SmokeShellPurple", 10]];
+		
+	};
+
+	case "Request Grenades. 40mm HE x60, HEDP x60": {
+		_object = createVehicle ["Box_NATO_Grenades_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "40MM GGR", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["CUP_1Rnd_HE_M203", 60], ["CUP_1Rnd_HEDP_M203", 60]];
+		
+	};
+
+	case "Request Explosives": {
+		_object = createVehicle ["Box_NATO_AmmoOrd_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "Sprängmedel och Minor", true];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [
+			["ATMine_Range_Mag", 9], 
+			["ClaymoreDirectionalMine_Remote_Mag", 10], 
+			["DemoCharge_Remote_Mag", 10], 
+			["SatchelCharge_Remote_Mag", 10]
+		];
+		{
+		_object addItemCargoGlobal _x;
+		} forEach [
+			["ACE_Clacker", 1], 
+			["ACE_M26_Clacker", 1], 
+			["ACE_DefusalKit", 1]
+		];
+		
+	};
+
+	case "Request GRG. HEAT x 14": {
+		_object = createVehicle ["Box_NATO_Ammo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "GRG Pansar", true];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_grg_heat_mag", 14]];
+		
+	};
+
+	case "Request GRG. HE x14": {
+		_object = createVehicle ["Box_NATO_Ammo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "GRG Spräng", true];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_grg_he_mag", 14]];
+		
+	};
+
+	case "Request GRG. SMOKE x14": {
+		_object = createVehicle ["Box_NATO_Ammo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "GRG Rök", true];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_grg_smoke_mag", 14]];
+		
+	};
+
+	case "Request GRG. ILLUM x14": {
+		_object = createVehicle ["Box_NATO_Ammo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "GRG Lys", true];
+		[_object, 1] call ace_cargo_c_setSize;
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_grg_illum_mag", 14]];
+		
+	};
+
+	case "Request NÄRLYS SignP80 x2, Lysptr7 x360": {
+		_object = createVehicle ["Box_NATO_Support_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "Lys", true];
+		[_object, 1] call ace_cargo_fnc_setSize;
+		{
+		_object addWeaponCargoGlobal _x;
+		} forEach [["sfp_signpist50", 2]];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [["sfp_1rnd_lyspatron7_mag", 360]];
+		
+	};
+
+	case "Request AT box. Rb57 x6": {
+		_object = createVehicle ["Box_NATO_WpsLaunch_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "Rb57", true];
+		{
+		_object addWeaponCargoGlobal _x;
+		} forEach [["launch_NLAW_F", 6]];
+		
+	};
+
+	case "Request AT box. P86 x16": {
+		_object = createVehicle ["Box_NATO_WpsLaunch_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "Pskott 86", true];
+		{
+		_object addWeaponCargoGlobal _x;
+		} forEach [["sfp_pskott86", 16]];
+		
+	};
+
+	case "Request Vehicle ammo 1200 points": {
+		_object = createVehicle ["Box_NATO_AmmoVeh_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		
+	};
+
+	case "Request Ammo Pallet": {
+		_object = createVehicle ["B_CargoNet_01_ammo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		clearItemCargoGlobal _object;
+		clearBackpackCargoGlobal _object;
+		_object setVariable ["ace_cargo_customName", "Blandad Am", true];
+		{
+		_object addWeaponCargoGlobal _x;
+		} forEach [["sfp_signpist50", 2], ["sfp_pskott86", 14], ["launch_NLAW_F", 8]];
+		{
+		_object addItemCargoGlobal _x;
+		} forEach [["ACE_Clacker", 1], ["ACE_M26_Clacker", 1], ["ACE_DefusalKit", 1]];
+		{
+		_object addMagazineCargoGlobal _x;
+		} forEach [
+			["sfp_30Rnd_556x45_Stanag", 150], 
+			["sfp_30Rnd_556x45_Stanag_tracer", 15], 
+			["sfp_200Rnd_556x45_ksp90", 30], 
+			["ATMine_Range_Mag", 10], 
+			["ClaymoreDirectionalMine_Remote_Mag", 10], 
+			["DemoCharge_Remote_Mag", 10], 
+			["SatchelCharge_Remote_Mag", 10], 
+			["sfp_handgrenade_shgr56", 50], 
+			["sfp_handgrenade_shgr2000", 80], 
+			["sfp_FlashBang", 125], 
+			["SmokeShell", 80], 
+			["SmokeShellBlue", 30], 
+			["SmokeShellPurple", 10], 
+			["CUP_1Rnd_HE_M203", 60], 
+			["CUP_1Rnd_HEDP_M203", 60],
+			["sfp_1rnd_lyspatron7_mag", 360], 
+			["sfp_grg_heat_mag", 14], 
+			["sfp_grg_he_mag", 14], 
+			["sfp_grg_smoke_mag", 14],
+			["sfp_grg_illum_mag", 14], 
+			["sfp_249Rnd_762x51_ksp58", 25], 
+			["sfp_20Rnd_762x51_ak4", 20], 
+			["sfp_20Rnd_762x51_ak4_ap", 20], 
+			["sfp_20Rnd_762x51_ak4_irtracer", 20], 
+			["sfp_20Rnd_762x51_ak4_tracer", 20], 
+			["sfp_200Rnd_556x45_ksp90_irtracer", 20],
+			["sfp_10Rnd_127x99_ag90", 20], 
+			["sfp_9Rnd_762x51_psg90", 15], 
+			["sfp_9Rnd_762x51_psg90_tracer", 15], 
+			["sfp_9Rnd_762x51_psg90_prick", 15], 
+			["sfp_17Rnd_9x19_Mag", 50]
+		];
+		
+	};
+
+	case "Request Fuel pallet 4x100L": {
+		_object = createVehicle ["CargoNet_01_barrels_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, 400] call ace_refuel_fnc_makeSource;
+		
+	};
+
+	case "Request Spare Wheel": {
+		_object = createVehicle ["ACE_Wheel", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		
+	};
+
+	case "Request Spare Tank Track": {
+		_object = createVehicle ["ACE_Track", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		
+	};
+
+	case "Request Jerry can 20L": {
+		_object = createVehicle ["Land_CanisterFuel_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		[_object, 0.5] call ace_cargo_fnc_setSize;
+		
+	};
+
+	case "Request Medical Box. Std": {
+		_object = createVehicle ["ACE_medicalSupplyCrate", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		{
+		_object addItemCargoGlobal _x;
+		} forEach [
+			["ACE_morphine", 25], 
+			["ACE_epinephrine", 25], 
+			["ACE_tourniquet", 20], 
+			["ACE_splint", 10], 
+			["ACE_bodyBag", 10], 
+			["kat_IV_16", 75], 
+			["ACE_packingBandage", 100], 
+			["ACE_quikclot", 20], 
+			["ACE_elasticBandage", 50], 
+			["ACE_fieldDressing", 100], 
+			["ACE_personalAidKit", 2], 
+			["ACE_plasmaIV", 50], 
+			["ACE_plasmaIV_500", 50], 
+			["kat_phenylephrine_inject", 25], 
+			["kat_PainkillerItem", 25]
+		];
+		
+	};
+
+	case "Request Medical Box. Adv": {
+		_object = createVehicle ["ACE_medicalSupplyCrate", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		{
+		_object addItemCargoGlobal _x;
+		} forEach [
+			["ACE_bloodIV", 50], 
+			["ACE_bloodIV_500", 10], 
+			["ACE_quikclot", 30], 
+			["ACE_personalAidKit", 2], 
+			["ACE_surgicalKit", 2], 
+			["kat_X_AED", 1], 
+			["kat_AED", 1], 
+			["kat_TXA", 40], 
+			["kat_scalpel", 1], 
+			["ACE_tourniquet", 10], 
+			["ACE_splint", 10], 
+			["kat_retractor", 1], 
+			["kat_phenylephrine_inject", 10], 
+			["kat_phenylephrine", 5], 
+			["kat_norepinephrine", 5], 
+			["kat_nitroglycerin", 5], 
+			["kat_naloxone", 5], 
+			["ACE_morphine", 5], 
+			["kat_lorazepam", 5], 
+			["kat_lidocaine", 5], 
+			["kat_flumazenil", 5], 
+			["kat_IO_FAST", 5], 
+			["kat_etomidate", 5], 
+			["ACE_epinephrine", 5], 
+			["kat_EACA", 40], 
+			["kat_vacuum", 5], 
+			["kat_clamp", 1], 
+			["kat_plate", 5], 
+			["ACE_packingBandage", 20], 
+			["ACE_adenosine", 5]
+		];
+		
+	};
+
+	case "Request Medic pack.": {
+		_object = createVehicle ["B_Kitbag_rgr", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		{
+		_object addItemCargoGlobal _x;
+		} forEach [
+		["ACE_morphine", 15], 
+		["ACE_epinephrine", 10], 
+		["ACE_tourniquet", 8], 
+		["ACE_splint", 8], 
+		["ACE_bodyBag", 1], 
+		["kat_IV_16", 20], 
+		["ACE_packingBandage", 30], 
+		["ACE_fieldDressing", 30], 
+		["ACE_personalAidKit", 1], 
+		["ACE_plasmaIV", 10], 
+		["ACE_plasmaIV_500", 8], 
+		["kat_phenylephrine_inject", 5], 
+		["kat_carbonate", 1], 
+		["kat_TXA", 5], 
+		["kat_EACA", 5], 
+		["kat_IO_FAST", 2],
+		["kat_PainkillerItem", 5]];
+		
+	};
+
+	case "Request Medic adv pack.": {
+		_object = createVehicle ["B_Bergen_mcamo_F", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		{
+		_object addItemCargoGlobal _x;
+		} forEach [
+		["ACE_morphine", 20], 
+		["ACE_adenosine", 5],
+		["kat_naloxone", 5],
+		["kat_carbonate", 5],
+		["kat_TXA", 10],
+		["kat_EACA", 10],
+		["kat_IO_FAST", 10],
+		["ACE_epinephrine", 15], 
+		["ACE_tourniquet", 10], 
+		["ACE_splint", 10], 
+		["ACE_bodyBag", 10], 
+		["kat_AED", 1], 
+		["kat_IV_16", 20],
+		["ACE_packingBandage", 40], 
+		["ACE_fieldDressing", 40], 
+		["ACE_personalAidKit", 1], 
+		["ACE_plasmaIV", 20], 
+		["kat_phenylephrine_inject", 10], 
+		["kat_PainkillerItem", 5]];
+		
+	};
+
+	case "Request Engineer pack": {
+		_object = createVehicle ["B_Kitbag_rgr", getMarkerPos "tab_1", [], 0, "CAN_COLLIDE"];
+		clearWeaponCargoGlobal _object;
+		clearMagazineCargoGlobal _object;
+		{
+		_object addItemCargoGlobal _x;
+		} forEach [
+			["ToolKit", 1], 
+			["ACE_wirecutter", 1], 
+			["ACE_SpraypaintRed", 1], 
+			["ACE_SpraypaintBlack", 1], 
+			["ACE_rope27", 1], 
+			["ACE_rope15", 1], 
+			["ACE_EntrenchingTool", 1]
+		];
+		
+	};
+};
+
+//missionNamespace setVariable ["_supplies", _object];
