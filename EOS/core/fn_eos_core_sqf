@@ -1,0 +1,716 @@
+/*
+Version: 1.0.0 [2024-05-19]
+
+Author: 
+Remake by Emek1501 [ASE]
+
+Original by bangabob
+https://forums.bohemia.net/forums/topic/144150-enemy-occupation-system-eos/
+
+Description:
+Hanterar kärnlogiken för EOS-zoner, inklusive skapandet och hanteringen av enheter och patruller inom zonerna.
+
+Variables:
+- VictoryColor, hostileColor: Färger för markörer baserat på zonstatus.
+
+Remarks:
+Skriptet aktiverar EOS-zoner, skapar enheter och patruller, och uppdaterar markörstatus baserat på zonens status.
+
+Parameter(s):
+- _mkr: Markeringsnamn.
+- _a: Huspatrullinställningar (antal, storlek).
+- _b: Infanteripatrullinställningar (antal, storlek).
+- _c: Lätta fordonsinställningar (antal, storlek).
+- _d: Bepansrade/statiska/helikopterinställningar (antal).
+- _settings: Inställningar för EOS (fraktion, markörens alfa, avstånd, sida, höjdbegränsning, debug).
+- _cache: Cache-indikator (true/false).
+
+Important Notes:
+- Detta skript måste köras på servern.
+- Markörnamn och inställningar måste vara korrekt definierade för att undvika fel.
+
+Potential Errors:
+- Felaktiga markörnamn eller odefinierade inställningar kan orsaka skriptfel och oväntade beteenden.
+- Om cache används måste enheter och grupper vara korrekt definierade och återställbara.
+
+Returns:
+- Inga specifika returer, enheter och patruller hanteras inom EOS-zonen.
+*/
+
+
+private _timeStamp = diag_tickTime;
+
+diag_log format ["[fn_eos_core.sqf] starts at %1", _timestamp];
+
+// Kontrollera om koden körs på servern
+if (!isServer) then {
+    // Logga ett meddelande om koden inte körs på servern
+    diag_log "EOS Core: Denna kod måste köras på servern";
+} else {
+    // Deklarera och initialisera lokala variabler för att hantera olika funktionaliteter inom EOS
+    private [
+        "_newpos",          // Ny position
+        "_cargoType",       // Typ av last
+        "_vehType",         // Typ av fordon
+        "_dGrp",            // Grupp av bepansrade fordon
+        "_mkrAgl",          // Markörens vinkel
+        "_side",            // Sida (blå, röd, etc.)
+        "_bGroup",          // Grupp av patrull
+        "_civZone",         // Civil zon indikator
+        "_fGrp",            // Grupp av helikoptrar
+        "_fSize",           // Storlek på helikoptergrupp
+        "_fGrps",           // Antal helikoptergrupper
+        "_eGrp",            // Grupp av statiska placeringar
+        "_eGrps",           // Antal statiska grupper
+        "_dGrps",           // Antal bepansrade grupper
+        "_aMin",            // Minimum storlek för huspatrullgrupp
+        "_aSize",           // Storlek på huspatrullgrupp
+        "_aGrps",           // Antal huspatrullgrupper
+        "_aGrp",            // Huspatrullgrupp
+        "_bMin",            // Minimum storlek för infanteripatrullgrupp
+        "_units",           // Enheter
+        "_bSize",           // Storlek på infanteripatrullgrupp
+        "_bGrps",           // Antal infanteripatrullgrupper
+        "_bGrp",            // Infanteripatrullgrupp
+        "_trig",            // Trigger
+        "_cache",           // Cache-indikator
+        "_grp",             // Grupp
+        "_crew",            // Besättning
+        "_vehicle",         // Fordon
+        "_actCond",         // Aktiveringsvillkor för trigger
+        "_mAN",             // Markörens alfa-nivå för neutralt läge
+        "_mAH",             // Markörens alfa-nivå för aktivt läge
+        "_distance",        // Avstånd
+        "_mA",              // Markörens alfa-nivå
+        "_settings",        // Inställningar
+        "_cGrp",            // Grupp av lätta fordon
+        "_cSize",           // Storlek på grupp av lätta fordon
+        "_cGrps",           // Antal grupper av lätta fordon
+        "_taken",           // Trigger för zonövertagande
+        "_clear",           // Trigger för zonrensning
+        "_enemyFaction",    // Fiendesida
+        "_faction",         // Fraktion
+        "_n",               // Räknare
+        "_eosAct",          // EOS aktiveringsindikator
+        "_eosActivated",    // EOS aktiverad trigger
+        "_debug",           // Debug-indikator
+        "_mkr",             // Markör
+        "_mPos",            // Markörens position
+        "_mkrX",            // Markörens X-storlek
+        "_mkrY",             // Markörens Y-storlek
+		"_difficulty"
+    ];
+	
+	// Hämta segerfärg från missionNamespace, standardfärg är grönt
+	private _victoryColor = missionNamespace getVariable ["VictoryColor", "colorGreen"];
+	// Hämta fientlig färg från missionNamespace, standardfärg är rött
+	private _hostileColor = missionNamespace getVariable ["hostileColor", "colorRed"];
+
+	// Hämta markörnamn från första argumentet
+	_mkr = (_this select 0);
+	// Hämta markörens position
+	_mPos = markerpos (_this select 0);
+	// Hämta markörens storlek i X-axeln
+	_mkrX = getMarkerSize _mkr select 0;
+	// Hämta markörens storlek i Y-axeln
+	_mkrY = getMarkerSize _mkr select 1;
+	// Hämta markörens riktning
+	_mkrAgl = markerDir _mkr;
+
+	// Hämta huspatrullinställningar från andra argumentet
+	_a = (_this select 1);
+	// Sätt antal huspatrullgrupper
+	_aGrps = _a select 0;
+	// Sätt huspatrullgruppens storlek
+	_aSize = _a select 1;
+	// Sätt minimum storlek för huspatrullgrupp
+	_aMin = _aSize select 0;
+
+	// Hämta infanteripatrullinställningar från tredje argumentet
+	_b = (_this select 2);
+	// Sätt antal infanteripatrullgrupper
+	_bGrps = _b select 0;
+	// Sätt infanteripatrullgruppens storlek
+	_bSize = _b select 1;
+	// Sätt minimum storlek för infanteripatrullgrupp
+	_bMin = _bSize select 0;
+
+	// Hämta lätta fordonsinställningar från fjärde argumentet
+	_c = (_this select 3);
+	// Sätt antal grupper av lätta fordon
+	_cGrps = _c select 0;
+	// Sätt storlek på grupper av lätta fordon
+	_cSize = _c select 1;
+
+	// Hämta inställningar för bepansrade fordon, statiska placeringar och helikoptrar från femte argumentet
+	_d = (_this select 4);
+	// Sätt antal bepansrade fordonsgrupper
+	_dGrps = _d select 0;
+	// Sätt antal statiska grupper
+	_eGrps = _d select 1;
+	// Sätt antal helikoptergrupper
+	_fGrps = _d select 2;
+	// Sätt storlek på helikoptergrupper
+	_fSize = _d select 3;
+
+	// Hämta övriga inställningar från sjätte argumentet
+	_settings = (_this select 5);
+	// Sätt faction från inställningarna
+	_faction = _settings select 0;
+	// Sätt markörens alfa-nivå från inställningarna
+	_mA = _settings select 1;
+	// Sätt avstånd från inställningarna
+	_distance = _settings select 2;
+	// Sätt sida (blå, röd, etc.) från inställningarna
+	_side = _settings select 3;
+	// Sätt höjdbegränsning om det finns i inställningarna, annars standard till false
+	_heightLimit = if (count _settings > 4) then {
+		_settings select 4
+	} else {
+		false
+	};
+	// Sätt debug-indikator om det finns i inställningarna, annars standard till false
+	_debug = if (count _settings > 5) then {
+		_settings select 5
+	} else {
+		false
+	};
+	// Sätt cache-indikator om det finns i sjunde argumentet, annars standard till false
+	_cache = if (count _this > 6) then {
+		_this select 6
+	} else {
+		false
+	};
+	_difficulty = if (count _settings > 7) then {
+		_settings select 7
+	} else {
+		1
+	};
+
+		// Sätt fiendens fraktion och civil zon indikator baserat på sidan
+		if (_side == EAST) then { 
+			_enemyFaction = "east"; 
+			_civZone = false; 
+		};
+		if (_side == WEST) then { 
+			_enemyFaction = "west"; 
+			_civZone = false; 
+		};
+		if (_side == INDEPENDENT) then { 
+			_enemyFaction = "GUER"; 
+			_civZone = false; 
+		};
+		if (_side == CIVILIAN) then { 
+			_enemyFaction = "civ"; 
+			_civZone = true; 
+		};
+
+		// Sätt markörens alfa-nivåer baserat på _mA värde
+		if (_mA==0) then {
+			_mAH = 1;
+			_mAN = 0.5;
+		};
+		if (_mA==1) then {
+			_mAH = 0;
+			_mAN = 0;
+		};
+		if (_mA==2) then {
+			_mAH = 0.5;
+			_mAN = 0.5;
+		};
+
+	// Initiera zonen
+	// Sätt triggernamn baserat på markörens namn
+	_trig=format ["EOSTrigger%1",_mkr];
+	// Hämta aktiverad EOS-trigger från missionNamespace
+	_eosActivated = missionNamespace getVariable [_trig, objNull];
+
+	// Skapa och konfigurera trigger om inte cache används
+	if (!_cache) then {
+		_actCond = "";
+		// Skapa aktiveringsvillkor baserat på multiplayer och höjdbegränsning
+		if (ismultiplayer) then {
+				if (_heightLimit) then {
+					_actCond="{vehicle _x in thisList && isplayer _x && ((getPosATL _x) select 2) < 5} count playableunits > 0";
+				}else {
+					_actCond="{vehicle _x in thisList && isplayer _x} count playableunits > 0";
+				};
+			} else {
+				if (_heightLimit) then {
+					_actCond="{vehicle _x in thisList && isplayer _x && ((getPosATL _x) select 2) < 5} count allUnits > 0";
+				} else {
+					_actCond="{vehicle _x in thisList && isplayer _x} count allUnits > 0";
+				};
+			};
+
+		// Skapa trigger för EOS
+		_eosActivated = createTrigger ["EmptyDetector",_mPos]; 
+		_eosActivated setTriggerArea [(_distance+_mkrX),(_distance+_mkrY),_mkrAgl,FALSE]; 
+		_eosActivated setTriggerActivation ["ANY","PRESENT",true];
+		_eosActivated setTriggerTimeout [1, 1, 1, true];
+		_eosActivated setTriggerStatements [_actCond,"",""];
+
+		// Spara den skapade triggern i missionNamespace	
+		missionNamespace setvariable [_trig, _eosActivated]; 
+	};
+
+	// Sätt markörens alfa-nivå
+	_mkr setmarkerAlpha _mAN;
+	// Om markörens färg inte är segerfärgen, sätt den till fientlig färg
+	if (!(getmarkercolor _mkr == _victoryColor)) then {
+		_mkr setmarkercolor _hostileColor;
+	};
+
+	// Kontrollera om triggern är definierad				
+	if (isNil "_eosActivated") then {
+		// Logga fel om triggern inte är definierad
+		diag_log "[ERROR] EOS Trigger är inte definierad";
+	} else {
+		// Vänta tills triggern är aktiverad
+		waitUntil { triggerActivated _eosActivated };
+	};
+
+	// Om markörens färg inte är svart
+	if (!(getmarkercolor _mkr == "colorblack"))then {
+		// Om markörens färg inte är segerfärgen, sätt dess alfa-nivå till aktiv nivå
+		if (!(getmarkercolor _mkr == _victoryColor)) then {
+			_mkr setmarkerAlpha _mAH;
+		};
+
+		// Skapa huspatruller
+		for "_counter" from 1 to _aGrps do {
+			// Initialisera huspatrullgrupp om den är tom
+			if (isnil "_aGrp") then { _aGrp = []; };
+			// Om cache används, hämta enheter från cache
+			if (_cache) then {
+				_cacheGrp=format ["HP%1",_counter];
+				_units=_eosActivated getvariable _cacheGrp;	
+				_aSize=[_units,_units];
+				_aMin=_aSize select 0;
+				if (_debug)then{
+					player sidechat format ["ID:%1,restore - %2",_cacheGrp,_units];
+				};
+			};
+			
+			// Om minimum antal enheter är större än 0, skapa patrull
+			if (_aMin > 0) then {
+				// Skapa huspatrullgrupp
+				_aGroup=[_mPos,_aSize,_faction,_side] call EOS_fnc_spawngroup;	
+				// Fyll hus med enheter om markörens position inte är på vatten
+				if (!surfaceiswater _mPos) then {
+					0 = [_aGroup, _mPos, _mkrX, [], true, false, 3, true] call lambs_wp_fnc_taskGarrison;
+				} else {
+					// Tilldela patrulluppgift om markörens position är på vatten
+					0 = [_aGroup, _mkr, 200, 8, [], true] call lambs_wp_fnc_taskPatrol;
+				};
+				
+				// Lägg till patrullgrupp till listan
+				_aGrp set [count _aGrp,_aGroup];
+				// Tilldela färdigheter till enheterna i patrullgruppen
+				0=[_aGroup,"INFskill",_difficulty] call eos_fnc_grouphandlers;
+				// Om debug är aktiverat, visa meddelande i sidchatten
+				if (_debug) then {
+					PLAYER SIDECHAT (format ["Spawned House Patrol: %1",_counter]);
+					0= [_mkr,_counter,"House Patrol",getpos (leader _aGroup)] call EOS_debug
+				};
+			};
+		};
+				
+		// Skapa infanteripatruller
+		for "_counter" from 1 to _bGrps do {
+			// Initialisera infanteripatrullgrupp om den är tom
+			if (isnil "_bGrp") then {_bGrp=[];};
+			// Om cache används, hämta enheter från cache
+			if (_cache) then {
+				_cacheGrp=format ["PA%1",_counter];
+				_units=_eosActivated getvariable _cacheGrp;
+				_bSize=[_units,_units];
+				_bMin=_bSize select 0;
+				if (_debug) then {
+					player sidechat format ["ID:%1,restore - %2",_cacheGrp,_units];
+				};
+			};
+									
+			// Om minimum antal enheter är större än 0, skapa patrull
+			if (_bMin > 0) then {	
+				// Hämta en säker position för patrullen
+				_pos = [_mkr,true] call eos_fnc_pos;
+				// Skapa infanteripatrullgrupp		
+				_bGroup=[_pos,_bSize,_faction,_side] call EOS_fnc_spawngroup;
+				// Tilldela patrulluppgift till gruppen
+				//0 = [_bGroup,_mkr] call EOS_fnc_taskpatrol;
+				0 = [_bGroup, _mkr, 200, 8, [], true] call lambs_wp_fnc_taskPatrol;
+				// Lägg till patrullgrupp till listan
+				_bGrp set [count _bGrp,_bGroup];
+				// Tilldela färdigheter till enheterna i patrullgruppen								
+				0=[_bGroup,"INFskill",_difficulty] call eos_fnc_grouphandlers;
+				// Om debug är aktiverat, visa meddelande i sidchatten
+				if (_debug) then {
+					PLAYER SIDECHAT (format ["Spawned Patrol: %1",_counter]);
+					0= [_mkr,_counter,"patrol",getpos (leader _bGroup)] call EOS_debug
+				};
+			};
+		};	
+			
+		//SPAWN LIGHT VEHICLES
+		for "_counter" from 1 to _cGrps do {
+			// Kontrollera om det finns en grupp att cacha	
+			if (isnil "_cGrp") then { _cGrp = []; };	
+			
+			// Hitta säker position för att spawna fordonet
+			_newpos=[_mkr,50] call EOS_fnc_findSafePos;
+			// Bestäm fordonstyp beroende på om positionen är på vatten eller land
+			if (surfaceiswater _newpos) then {
+				_vehType=8;
+				_cargoType=10;
+				} else {
+					_vehType=7;
+					_cargoType=9;
+				};
+			
+			// Spawnar lätt fordon med angiven typ
+			_cGroup=[_newpos,_side,_faction,_vehType]call EOS_fnc_spawnvehicle;
+			if ((_cSize select 0) > 0) then {
+				// Om gruppstorlek är större än 0, fyll fordonet med trupper
+				0=[(_cGroup select 0),_cSize,(_cGroup select 2),_faction,_cargoType] call eos_fnc_setcargo;
+			};
+
+			// Tilldela färdigheter till enheter i fordonet					
+			0=[(_cGroup select 2),"LIGskill",_difficulty] call eos_fnc_grouphandlers;
+			// Tilldela patrulleringsuppdrag till gruppen
+			0 = [(_cGroup select 2), _mkr, 200, 8, [], true] call lambs_wp_fnc_taskPatrol;
+			_cGrp set [count _cGrp,_cGroup];			
+
+			// Debug-utskrift								
+			if (_debug) then {
+				player sidechat format ["Light Vehicle:%1 - r%2",_counter,_cGrps];
+				0= [_mkr,_counter,"Light Veh",(getpos leader (_cGroup select 2))] call EOS_debug
+			};
+		};	
+				
+		//SPAWN ARMOURED VEHICLES
+		for "_counter" from 1 to _dGrps do {
+			// Kontrollera om det finns en grupp att cacha
+			if (isnil "_dGrp") then {_dGrp=[];};
+			
+			// Hitta säker position för att spawna fordonet
+			_newpos=[_mkr,50] call EOS_fnc_findSafePos;
+			// Bestäm fordonstyp beroende på om positionen är på vatten eller land
+			if (surfaceiswater _newpos) then {
+				_vehType=8;
+				} else {
+					_vehType=2;
+				};
+
+			// Spawnar bepansrat fordon med angiven typ		
+			_dGroup=[_newpos,_side,_faction,_vehType] call EOS_fnc_spawnvehicle;
+
+			// Tilldela färdigheter till enheter i fordonet				
+			0=[(_dGroup select 2),"ARMskill",_difficulty] call eos_fnc_grouphandlers;
+			// Tilldela patrulleringsuppdrag till gruppen
+			0 = [(_dGroup select 2), _mkr, 200, 8, [], true] call lambs_wp_fnc_taskPatrol;
+			_dGrp set [count _dGrp,_dGroup];
+
+			// Debug-utskrift						
+			if (_debug) then {
+				player sidechat format ["Armoured:%1 - r%2",_counter,_dGrps];
+				0= [_mkr,_counter,"Armour",(getpos leader (_dGroup select 2))] call EOS_debug
+			};
+		};
+				
+		//SPAWN STATIC PLACEMENTS
+		for "_counter" from 1 to _eGrps do {
+			// Kontrollera om markeringspositionen är på vatten, i så fall avbryt
+			if (surfaceiswater _mPos) then {
+
+			} else {
+				// Kontrollera om det finns en grupp att cacha
+				if (isnil "_eGrp") then {_eGrp=[];};
+				// Hitta säker position för att spawna statisk placering		
+				_newpos=[_mkr,50] call EOS_fnc_findSafePos;
+				// Spawnar statisk placering	
+				_eGroup=[_newpos,_side,_faction,5]call EOS_fnc_spawnvehicle;
+				// Tilldela färdigheter till enheter i den statiska placeringen
+				0=[(_eGroup select 2),"STAskill",_difficulty] call eos_fnc_grouphandlers;
+				_eGrp set [count _eGrp,_eGroup];
+				// Debug-utskrift					
+				if (_debug) then {
+					player sidechat format ["Static:%1",_counter];
+					0= [_mkr,_counter,"Static",(getpos leader (_eGroup select 2))] call EOS_debug
+				};
+			};
+		};	
+				
+		//SPAWN CHOPPER
+		for "_counter" from 1 to _fGrps do {
+			// Kontrollera om det finns en grupp att cacha
+			if (isnil "_fGrp") then { _fGrp = []; };	
+			// Bestäm helikoptertyp beroende på storlek
+			if ((_fSize select 0) > 0) then {
+				_vehType=4
+			} else {
+				_vehType=3
+			};
+			
+			// Hitta relativ position för att spawna helikoptern
+			_newpos = [(markerpos _mkr), 1500, random 360] call BIS_fnc_relPos;	
+			// Spawnar helikopter med angiven typ och inställning
+			_fGroup=[_newpos,_side,_faction,_vehType,"fly"]call EOS_fnc_spawnvehicle;	
+			_fGrp set [count _fGrp,_fGroup];
+								
+			// Om storleken är större än 0, sätt last med trupper					
+			if ((_fSize select 0) > 0) then {
+				_cargoGrp = createGroup _side;
+				0=[(_fGroup select 0),_fSize,_cargoGrp,_faction,9] call eos_fnc_setcargo;
+				0=[_cargoGrp,"INFskill",_difficulty] call eos_fnc_grouphandlers;
+				_fGroup set [count _fGroup,_cargoGrp];
+				// Ladda ur transporten vid markeringspositionen
+				null = [_mkr,_fGroup,_counter] spawn compile preprocessFileLineNumbers eos_fnc_transportUnload_path;
+			} else {
+				// Sätt waypoint för helikoptern till markeringspositionen
+				_wp1 = (_fGroup select 2) addWaypoint [(markerpos _mkr), 0];  
+				_wp1 setWaypointSpeed "FULL";  
+				_wp1 setWaypointType "SAD";
+			};
+
+			// Tilldela färdigheter till enheter i helikoptern		
+			0=[(_fGroup select 2),"AIRskill",_difficulty] call eos_fnc_grouphandlers;
+
+			// Debug-utskrift		
+			if (_debug) then {
+				player sidechat format ["Chopper:%1",_counter];
+				0= [_mkr,_counter,"Chopper",(getpos leader (_fGroup select 2))] call EOS_debug
+			};
+		};	
+
+
+					
+		//SPAWN ALT TRIGGERS
+		// Skapa trigger för att kontrollera om området är klart	
+		_clear = createTrigger ["EmptyDetector",_mPos]; 
+		_clear setTriggerArea [_mkrX,_mkrY,_mkrAgl,FALSE]; 
+		_clear setTriggerActivation [_enemyFaction,"NOT PRESENT",true]; 
+		_clear setTriggerStatements ["this","",""]; 
+
+		// Skapa trigger för att kontrollera om området är taget
+		_taken = createTrigger ["EmptyDetector",_mPos]; 
+		_taken setTriggerArea [_mkrX,_mkrY,_mkrAgl,FALSE];
+		_taken setTriggerActivation ["ANY","PRESENT",true]; 
+		_taken setTriggerStatements ["{vehicle _x in thisList && isplayer _x && ((getPosATL _x) select 2) < 5} count allUnits > 0","",""]; 
+		
+		// Initiera EOS-aktivering
+		_eosAct = true;	
+
+		// Kontrollera om trigger är aktiverad och hantera caching och rensning av enheter
+		while {_eosAct} do {
+			// Om spelaren lämnar området eller zonen är deaktiverad
+			if (!triggeractivated _eosActivated || getmarkercolor _mkr == "colorblack") exitwith {
+				if (_debug) then {
+					if (!(getmarkercolor _mkr == "colorblack")) then {
+						hint "Restarting Zone AND deleting units";
+					} else {
+						hint "EOS zone deactivated";
+					};
+				};		
+				//CACHE LIGHT VEHICLES
+				if (!isnil "_cGrp") then {				
+					{	
+						_vehicle = _x select 0;
+						_crew = _x select 1;
+						_grp = _x select 2;
+						if (!alive _vehicle || {!alive _x} foreach _crew) then { 
+							_cGrps= _cGrps - 1;
+						};	
+						{deleteVehicle _x} forEach (_crew);		
+						if (!(vehicle player == _vehicle)) then {
+							{deleteVehicle _x} forEach[_vehicle];
+						};												
+						{deleteVehicle _x} foreach units _grp;deleteGroup _grp;
+					}foreach _cGrp;
+				
+					if (_debug) then {
+						player sidechat format ["ID:c%1",_cGrps];
+					};
+				};
+															
+				// CACHE ARMOURED VEHICLES
+				if (!isnil "_dGrp") then {				
+					{	
+						_vehicle = _x select 0;
+						_crew = _x select 1;
+						_grp = _x select 2;
+						// Kontrollera om fordonet eller dess besättning är döda och minska antalet grupper
+						if (!alive _vehicle || {!alive _x} foreach _crew) then {
+							_dGrps= _dGrps - 1;
+						};
+						// Radera besättningen	
+						{
+							deleteVehicle _x
+						} forEach (_crew);
+						// Radera fordonet om spelaren inte är ombord		
+						if (!(vehicle player == _vehicle)) then {
+							{deleteVehicle _x} forEach [ _vehicle ];
+						};
+						// Radera enheterna och gruppen												
+						{deleteVehicle _x} foreach units _grp;deleteGroup _grp;
+					}foreach _dGrp;
+					if (_debug) then {
+						player sidechat format ["ID:c%1",_dGrps];
+					};
+				};
+
+				// CACHE PATROL INFANTRY					
+				if (!isnil "_bGrp") then {		
+					_n = 0;					
+					{	
+						_n = _n + 1;
+						// Räkna antal levande enheter och cachar gruppen
+						_units = {alive _x} count units _x;
+						_cacheGrp = format ["PA%1",_n];
+						if (_debug) then{
+							player sidechat format ["ID:%1,cache - %2",_cacheGrp,_units];
+						};
+						_eosActivated setvariable [_cacheGrp,_units];
+						// Radera enheterna och gruppen		
+						{
+							deleteVehicle _x
+						} foreach units _x;
+						deleteGroup _x;
+					} foreach _bGrp;
+				};
+										
+				// CACHE HOUSE INFANTRY
+				if (!isnil "_aGrp") then {		
+					_n=0;					
+					{	
+						_n = _n + 1;
+						// Räkna antal levande enheter och cachar gruppen
+						_units={alive _x} count units _x;
+						_cacheGrp=format ["HP%1",_n];
+						if (_debug) then{
+							player sidechat format ["ID:%1,cache - %2",_cacheGrp,_units];
+						};
+						_eosActivated setvariable [_cacheGrp,_units];
+						// Radera enheterna och gruppen		
+						{
+							deleteVehicle _x
+						} foreach units _x;
+						deleteGroup _x;
+					} foreach _aGrp;
+				};
+									
+				// CACHE MORTARS			
+				if (!isnil "_eGrp") then {			
+					{	
+						_vehicle = _x select 0;
+						_crew = _x select 1;
+						_grp = _x select 2;
+						// Kontrollera om fordonet eller dess besättning är döda och minska antalet grupper
+						if (!alive _vehicle || {!alive _x} foreach _crew) then {
+							_eGrps= _eGrps - 1;
+						};
+						// Radera besättningen			
+						{ 
+							deleteVehicle _x
+						} forEach (_crew);
+						// Radera fordonet om spelaren inte är ombord
+						if (!(vehicle player == _vehicle)) then {
+							{
+								deleteVehicle _x
+							} forEach [_vehicle];
+						};	
+						// Radera enheterna och gruppen												
+						{
+							deleteVehicle _x
+						} foreach units _grp;
+						deleteGroup _grp;
+					} foreach _eGrp;};	
+										
+				// CACHE HELICOPTER TRANSPORT
+				if (!isnil "_fGrp") then {			
+					{	
+						_vehicle = _x select 0;
+						_crew = _x select 1;
+						_grp = _x select 2; 
+						_cargoGrp = _x select 3;
+						// Kontrollera om fordonet eller dess besättning är döda och minska antalet grupper
+						if (!alive _vehicle || {!alive _x} foreach _crew) then {
+						_fGrps= _fGrps - 1;
+						};
+						// Radera besättningen			
+						{
+							deleteVehicle _x
+						} forEach (_crew);
+						// Radera fordonet om spelaren inte är ombord
+						if (!(vehicle player == _vehicle)) then {
+							{
+								deleteVehicle _x
+							} forEach [_vehicle];
+						};
+						// Radera enheterna och gruppen													
+						{
+							deleteVehicle _x
+						} foreach units _grp;
+						deleteGroup _grp;
+						// Radera lastgrupp om den existerar
+						if (!isnil "_cargoGrp") then {
+							{
+								deleteVehicle _x
+							} foreach units _cargoGrp;
+							deleteGroup _cargoGrp;
+						};
+																					
+					}foreach _fGrp;
+				};	
+										
+				_eosAct=false;
+				if (_debug) then {hint "Zone Cached";};
+			};
+			if (triggeractivated _clear and triggeractivated _taken and !_civZone) exitwith {
+				// Om zonen är fångad, börja kontrollera för fiender
+				_cGrps=0;
+				_aGrps=0;
+				_bGrps=0;
+				_dGrps=0;
+				_eGrps=0;
+				_fGrps=0;		
+				while {triggeractivated _eosActivated AND !(getmarkercolor _mkr == "colorblack")} do {	// Om zonen inte är klar, ändra färg till fientlig
+					if (!triggeractivated _clear) then {
+						// Om zonen inte är klar, ändra färg till fientlig
+						_mkr setmarkercolor _hostileColor;
+						_mkr setmarkerAlpha _mAH;
+						if (_debug) then {hint "Zone Lost";};
+					} else {
+						// Om zonen är klar, ändra färg till seger
+						_mkr setmarkercolor _victoryColor;
+						_mkr setmarkerAlpha _mAN;
+						if (_debug) then {hint "Zone Captured";};
+					};
+					sleep 1;
+				};
+				
+			// Om spelaren lämnar zonen			
+			_eosAct=false;		
+			}; sleep 0.5;
+		};
+
+		deletevehicle _clear;
+		deletevehicle _taken;	
+		
+		if (!(getmarkercolor _mkr == "colorblack")) then {	
+			// Om markören inte är svart, återstarta zonen
+			null = [
+				_mkr,
+				[_aGrps,_aSize],
+				[_bGrps,_bSize],
+				[_cGrps,_cSize],
+				[_dGrps,_eGrps,_fGrps,_fSize],
+				_settings,
+				true
+			] spawn compile preprocessFileLineNumbers EOS_core_path;
+			}else{
+				// Om markören är svart, sätt alfa till 0
+				_Mkr setmarkeralpha 0;
+			};
+	};
+};
