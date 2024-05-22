@@ -1,0 +1,113 @@
+--------------------------------------------
+ - ENGIMA'S PARKED VEHICLES (VERSION 1.0) -
+--------------------------------------------
+
+Engima's Parked Vehicles is a scripts that adds parked vehicles to an Arma 3 mission.
+
+Vehicles of different types are spawned an garages and beside certain buildings across the map/terrain at the beginning of
+the mission.
+
+For a vehicle to be spawned in or outside a building there has to be a garage definition entry for that building in the file
+Engima\ParkedVehicles\GarageDefinitions.sqf. Garages and some other buildings for islands Stratis, Altis and Tanoa are 
+supported out of the box. Anyone can add more garage definitions when needed.
+
+Script works in singleplayer, multiplayer, hosted, dedicated for JIPs.
+
+Until version 1.0 is released, there may be major changes in the script from time to time.
+
+
+--- LICENCE AND CODE ---
+
+Script is licensed with MIT. Code is at Github on the following URL:
+https://github.com/XEngima/Arma3-Scripts-ParkedVehicles
+
+
+--- VERSION HISTORY ---
+
+1.1:   Added function PARKEDVEHICLES_MonitorGarageDefinition that can be used to create garage definitions.
+       Fixed: Script error when BUILDING_TYPES parameter conatins entries that are not represented as a garage definition.
+1.0:   Fixed: Debug markers were not removed upon player absence.
+0.14:  Added garage definitions for two buildings.
+       Made vehicles spawn and despawn depending on player presence.
+0.13:  Added callback ON_VEHICLE_CREATED in parameter list.
+       Changed name of parameter key UNIT_CLASSES to VEHICLE_CLASSES.
+0.12:  Removed debug information visible at wrong occation.
+0.11:  Improved performance.
+       Fixed: Script error when a player die in MP.
+       Rework of file structure.
+0.10:  First usable but unfinished version.
+
+
+--- CUSTOMIZATION ---
+
+The script can be customized for different behaviors. Customize a script by editing the startup parameters. The startup 
+parameters list is an array of key value pairs. A key value pair is a small array where the key object is a string 
+with the name of the parameter setting and the value object is the actual value.
+
+Here is an example that uses all parameters and first saves them in a variable named "_parameters". The function call 
+that spawns the vehicle is beneath. This code are to be put in Engima\ParkedVehicles\ConfigAndStart.sqf.
+
+------------------------------
+
+// Set custom parameters here
+private _parameters = [
+	["BUILDING_TYPES", ["Land_FuelStation_02_workshop_F", "Land_GarageShelter_01_F", "Land_FuelStation_01_shop_F", "Land_Supermarket_01_F", "Land_House_Big_03_F", "Land_i_Garage_V1_F", "Land_MilOffices_V1_F", "Land_FuelStation_Shed_F", "Land_i_Stone_HouseBig_V2_F", "Land_i_Stone_HouseSmall_V2_F"]],
+	["VEHICLE_CLASSES", ["C_Offroad_01_F", "C_Offroad_01_repair_F", "C_Quadbike_01_F", "C_Hatchback_01_F", "C_Hatchback_01_sport_F", "C_SUV_01_F", "C_Van_01_transport_F", "C_Van_01_fuel_F"]],
+	["SPAWN_RADIUS", 1000],
+	["PROBABILITY_OF_PRESENCE", 1],
+	["ON_VEHICLE_CREATED", {}],
+	["ON_VEHICLE_REMOVING", {}],
+	["DEBUG", false]
+];
+
+// Run script
+_parameters call PARKEDVEHICLES_PlaceVehiclesOnMap;
+
+------------------------------
+
+Here is a complete list of the parameters and what they do:
+
+* BUILDING_TYPES (Array): The class names of buildings to include. Each building class name in this list must have a 
+  representation in the garage definition list - see file Engima\ParkedVehicles\GarageDefinitions.sqf. Note that if
+  you run two instances of this script THE SAME BUILDING TYPE MUST NOT BE INCLUDED IN BOTH INSTANCES.
+
+* VEHICLE_CLASSES (Array): Array of vehicle classes that may be spawned. If you want to see more of one vehicle than 
+  another, then have it occur a couple of more often in the array. The following example will spawn 75% quadbikes 
+  and 25% transports:
+  Example: ["C_Quadbike_01_F", "C_Quadbike_01_F", "C_Quadbike_01_F", "C_Van_01_transport_F"]
+  
+* SPAWN_RADIUS (Scalar): The spawn radius from all players. Vehicles will be spawned at greater distances than this
+  value from all players, and if a vehicle is farther away than this value from all players it will be removed.
+  Example: 1000
+
+* PROBABILITY_OF_PRESENCE (Scalar): The probability between 0 and 1 for a vehicle to be spawned for each possible 
+  building.
+  Example: 0.75
+
+* ON_VEHICLE_CREATED (Code): Code that is executed when a vehicle has spawned. Parameter _this is an array:
+    0 (Object): The vehicle that was created.
+    1 (Boolean): true if this spawn is the first spawn of the current vehicle in the current garage, and false if this is a 
+                 respawn of the vehicle after the vehicle has been removed due to player absence.
+    2 (Object): The building that is the garage (or the associated building) for this vehicle.
+  Remarks: To be exact this callback is called one second after the vehicle has been created, since if it is destroyed upon
+           creation, it will be immediately removed, and this callback will never fire.
+  Example: { params ["_vehicle", "_firstSpawn", "_building"]; hint ("Vehicle of type " + typeOf _vehicle + " created!"); }
+
+* ON_VEHICLE_REMOVING (Code): Code that is executed right before a vehicle is removed. Parameter _this is an array:
+    0 (Object): The vehicle that will be removed.
+    1 (Object): The building that is the garage (or the associated building) for this vehicle.
+  Example: { params ["_vehicle", "_firstSpawn", "_building"]; hint ("Vehicle of type " + typeOf _vehicle + " removed!"); }
+
+* DEBUG (Boolean): Whether script is running in debug mode or not. In debug mode all vehicles are marked as dots on 
+  the map, as well as all vehicle that blew up upon spawn, and all vehicles that could not spawn due to close large
+  objects.
+  Example: true
+
+--- TIPS AND TRICKS ---
+
+You can call the script several times with different parameter sets. For example, if you want a certain set of civilian
+vehicles spawn in one kind of garage all the time, and military vehicles in half of all harbour magazines: create two 
+parameter sets, one for civilian vehicles where you set garages as building types and probability of precense to 1. And 
+one for military vehicles where you set magazines as building types and probability of precence to 0.5. Then call function 
+PARKEDVEHICLES_PlaceVehiclesOnMap two times, one time for each parameter set. Just be sure not to include the same building
+type in both parameter sets!
