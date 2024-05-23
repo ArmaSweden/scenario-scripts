@@ -6,19 +6,14 @@ Hur du lägger in det:
 Gör en valfri AI till kvartermästare genom att ange den som QM1 och sätt en markör intill där 
 utrustningen skall spawna in och ange den som tab_1
 	
-Aktivering: Lägg till nedan rader i serverInit.sqf:
-	
-  //INITIATE MISSION TIMER
-  []execVM "scripts\timer.sqf";
-
   Resten av koden nedan kopierar du och klistrar in i två filer som du lägger i en mapp som heter scripts och filerna skall heta:
   fn_suppliesActions.sqf
   fn_suppliesCore.sqf
 
-	Justera koden med vad du vill ha i lådorna eller lägg till egna.
+Justera koden med vad du vill ha i lådorna eller lägg till egna.
 
-	@author of optimized script: EMEK [ASE]
-  @original script and idea: DONK [ASE]
+	@author of optimized script: EMEK1501 [ASE]
+  	@original script and idea: DONK [ASE]
 */
 
 
