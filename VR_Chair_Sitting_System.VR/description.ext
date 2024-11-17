@@ -1,0 +1,174 @@
+// description.ext (mission configuration)
+/*
+Author: Emek1501 of Arma Sweden
+
+Description:
+Mission and mod configuration file that sets up the sitting functionality, including:
+- Basic mission parameters
+- Function declarations
+- Chair configurations
+- Required mod settings
+- Event handlers
+
+Parameters: None (Configuration file)
+
+Returns: None (Configuration file)
+
+Important:
+- Requires ACE mod
+- Functions are allowed to recompile (development friendly)
+- Logging is enabled for debugging
+- Custom CfgSitting class defines valid chair types and their properties
+
+Notes:
+- Chair configurations include position offsets and rotation values
+- Each chair type must be properly configured in CfgSitting
+- PostInit event handler automatically initializes the sitting system
+- ACE interaction menu is forced enabled
+
+Potential Errors:
+- Missing required addons (ace_interact_menu, ace_common)
+- Incorrect chair position/rotation values may cause floating or misaligned animations
+- Function paths must match the actual folder structure
+
+Example:
+To add a new chair type:
+class CfgSitting {
+    class ChairTypes {
+        class Land_NewChair_F {
+            canSit = 1;
+            sitPosition[] = {0, 0, -0.5};
+            sitDirection = 180;
+        };
+    };
+};
+
+*/
+
+OverviewText = "Sit on Chair";
+author = "Emek1501 of Arma Sweden";
+OnLoadname = "Sit on Chair";
+OnLoadMission = "Sit on Chair Script";
+loadScreen = "";
+
+respawn = 3;
+respawnDelay = 10;
+respawnTemplates[] = {"MenuPosition", "Spectator"};
+respawnOnStart = 0;
+disabledAI = 1;
+enableDebugConsole = 1;
+
+// Required for ACE interaction
+allowFunctionsRecompile = 1;  // Helpful during development
+allowFunctionsLog = 1;        // Helpful for debugging
+
+class CfgPatches {
+    class SIT {
+        units[] = {};
+        weapons[] = {};
+        requiredVersion = 0.1;
+        requiredAddons[] = {"ace_interact_menu", "ace_common"};
+    };
+};
+
+class CfgFunctions 
+{
+    class SIT 
+    {
+        tag = "SIT";
+        class config 
+        {
+            file = "functions\config";
+            class initSitting {};
+        };
+        class sitting 
+        {
+            file = "functions\sitting";
+            class addSitActions {};
+            class canSit {};
+            class canStand {};
+            class sit {};
+            class stand {};
+            class getRandomAnimation {};
+        };
+        class helper 
+        {
+            file = "functions\helper";
+            class switchAnimation {};
+        };
+    };
+};
+
+class CfgSitting 
+{
+    enable = 1;
+    
+    class ChairTypes 
+    {
+        class Land_CampingChair_V1_F 
+        {
+            canSit = 1;
+            sitPosition[] = {0, -0.1, -0.45};
+            sitDirection = 180;
+        };
+        class Land_CampingChair_V2_F 
+        {
+            canSit = 1;
+            sitPosition[] = {0, -0.1, -0.45};
+            sitDirection = 180;
+        };
+        class Land_ChairPlastic_F 
+        {
+            canSit = 1;
+            sitPosition[] = {0, 0, -0.5};
+            sitDirection = 90;
+        };
+        class Land_ChairWood_F 
+        {
+            canSit = 1;
+            sitPosition[] = {0, -0.5, 0};
+            sitDirection = 180;
+        };
+        class Land_OfficeChair_01_F 
+        {
+            canSit = 1;
+            sitPosition[] = {0, 0, -0.6};
+            sitDirection = 180;
+        };
+        class Land_DeskChair_01_black_F 
+        {
+            canSit = 1;
+            sitPosition[] = {0, 0, -0.25};
+            sitDirection = 0;
+        };
+        class Land_DeskChair_01_olive_F 
+        {
+            canSit = 1;
+            sitPosition[] = {0, 0, -0.25};
+            sitDirection = 0;
+        };
+        class Land_DeskChair_01_sand_F 
+        {
+            canSit = 1;
+            sitPosition[] = {0, 0, -0.25};
+            sitDirection = 0;
+        };
+        // Add more chair types as needed
+    };
+};
+
+class Extended_PostInit_EventHandlers {
+    class SIT {
+        init = "[] call SIT_fnc_initSitting";
+    };
+};
+
+class CBA_Extended_EventHandlers {};
+
+class ACE_Settings {
+    class ace_interact_menu_enabled {
+        value = 1;
+        typeName = "BOOL";
+        force = 1;
+    };
+};
