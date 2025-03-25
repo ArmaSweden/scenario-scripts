@@ -1,0 +1,12 @@
+class CfgDebriefing
+{  
+	class End1
+	{
+		title = "MISSION COMPLETED";
+		subtitle = "VIP survived.";
+		description = "Test of escort script complete.";
+		pictureBackground = "";
+		picture = "b_inf";
+		pictureColor[] = { 0.0, 0.3, 0.6, 1 };
+	};
+};

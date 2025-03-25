@@ -1,0 +1,1 @@
+[]execVM "scripts\vipInit.sqf";
