@@ -1,0 +1,15 @@
+enableDebugConsole = 2;
+onLoadName = "Grid Caching System - DEMO";
+OnLoadMission = "Learn all about the different features and subsystems offered by the grid caching system.";
+allowFunctionsLog = 1;
+
+class Params
+{
+	class PersistenceResetOnStart
+	{
+		title = "Reset persistence on mission start";
+		values[] = {0,1}; 
+		texts[] = {"false","true"}; // Description of each selectable item
+		default = 0;
+	};
+};
